@@ -30,7 +30,7 @@ project(micropython)
 include(mpy.cmake)
 
 target_sources(app PRIVATE
-    src/zephyr_start.c
+    src/main.c
 )
 
 target_link_libraries(app PRIVATE ${MICROPY_TARGET})

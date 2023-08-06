@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(main, 4);
 
 static char heap[CONFIG_MICROPY_HEAP_SIZE];
 
-int real_main(void) {
+int main(void) {
     LOG_DBG("booting...");
 
     mp_stack_ctrl_init();
@@ -106,7 +106,7 @@ int real_main(void) {
         LOG_DBG("'test' function not found");
     } else {
         // Call the function
-        mp_obj_t num = mp_obj_new_int(111);
+        mp_obj_t num = mp_obj_new_int(112);
         mp_obj_t result = mp_call_function_1(test_fn, num);
         // Here you can do something with the result, if the function returns anything.
         (void)result;

@@ -7,7 +7,7 @@ include(${MICROPY_DIR}/py/py.cmake)
 include(${MICROPY_DIR}/extmod/extmod.cmake)
 
 set(MICROPY_SOURCE_PORT
-    main.c
+    src/main.c
     mphalport.c
 )
 list(TRANSFORM MICROPY_SOURCE_PORT PREPEND ${MICROPY_PORT_DIR}/)
