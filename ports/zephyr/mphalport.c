@@ -7,6 +7,7 @@
 #include "py/lexer.h"
 #include "py/builtin.h"
 #include "py/mperrno.h"
+#include "py/runtime.h"
 
 /* interface for printing string */
 void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
