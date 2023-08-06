@@ -106,7 +106,7 @@ int real_main(void) {
         LOG_DBG("'test' function not found");
     } else {
         // Call the function
-        mp_obj_t num = mp_obj_new_int(72);
+        mp_obj_t num = mp_obj_new_int(111);
         mp_obj_t result = mp_call_function_1(test_fn, num);
         // Here you can do something with the result, if the function returns anything.
         (void)result;

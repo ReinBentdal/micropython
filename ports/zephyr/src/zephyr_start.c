@@ -24,10 +24,7 @@
  * THE SOFTWARE.
  */
 #include <zephyr/kernel.h>
-#include <zephyr/console/console.h>
-#include "zephyr_getchar.h"
 
-#include "py/mperrno.h"
 #include "py/obj.h"
 
 int real_main(void);
@@ -36,16 +33,8 @@ int main(void) {
 
     mp_obj_t test;
     (void)test;
-    // #ifdef CONFIG_CONSOLE_SUBSYS
-    // console_init();
-    // #else
-    // zephyr_getchar_init();
-    // #endif
-    real_main();
 
-    // // This is needed so the linker includes k_timer_init, z_impl_k_timer_start
-    // // and z_impl_k_timer_stop, as used by libmicropython.a.
-    // k_timer_start(NULL, K_MSEC(0), K_MSEC(0));
+    real_main();
 
     return 0;
 }

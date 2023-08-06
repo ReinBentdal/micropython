@@ -26,20 +26,11 @@ menu "MicroPython Options"
 
 config MICROPY_CONFIGFILE
 	string "Configuration file"
-	default "mpconfigport_minimal.h"
+	default "mpconfigport.h"
 
 config MICROPY_HEAP_SIZE
 	int "Heap size"
 	default 16384
-
-config MICROPY_VFS_FAT
-	bool "FatFS file system"
-
-config MICROPY_VFS_LFS1
-	bool "LittleFs version 1 file system"
-
-config MICROPY_VFS_LFS2
-	bool "LittleFs version 2 file system"
 
 endmenu # MicroPython Options
 

@@ -26,94 +26,86 @@
 #include <alloca.h>
 
 // Include Zephyr's autoconf.h, which should be made first by Zephyr makefiles
-#include "autoconf.h"
+// #include "autoconf.h"
 // Included here to get basic Zephyr environment (macros, etc.)
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/spi.h>
 
 // Usually passed from Makefile
 #ifndef MICROPY_HEAP_SIZE
 #define MICROPY_HEAP_SIZE (16 * 1024)
 #endif
 
+// This allows MicroPython to track the source line of the Python script which helps in debugging.
 #define MICROPY_ENABLE_SOURCE_LINE  (1)
+
+// Gives nices error messages because the size of the stack is monitored.
 #define MICROPY_STACK_CHECK         (1)
+
+// TODO: what happens if this is not enabled?
 #define MICROPY_ENABLE_GC           (1)
-#define MICROPY_ENABLE_FINALISER    (MICROPY_VFS)
-#define MICROPY_HELPER_REPL         (1)
-#define MICROPY_REPL_AUTO_INDENT    (1)
-#define MICROPY_KBD_EXCEPTION       (1)
+
+// This enables the MicroPython compiler which you need to compile the Python script.
+#define MICROPY_ENABLE_COMPILER     (1)
+
+// TODO: The REPL is currently not possible to remove entirely.
+// REPL is the interractive console to on-the-fly execute MicroPython.
+// Enable or disable the REPL helper, which can assist with auto-indentation and other features in the REPL.
+#define MICROPY_HELPER_REPL         (0)
+
+// Enable or disable auto-indentation in the REPL.
+#define MICROPY_REPL_AUTO_INDENT    (0)
+
+// Enable or disable keyboard interrupt exceptions (i.e., allow the program to be interrupted by pressing Ctrl+C). Assumed in the REPL.
+#define MICROPY_KBD_EXCEPTION       (0)
+
+// Enable Python 'Literal String Formatting', ie. formatting using f'val: {val}'
+#define MICROPY_PY_FSTRINGS         (1)
+
+// Makes modules behave more like CPython, at the cost of reduced performance and more memory usage.
 #define MICROPY_CPYTHON_COMPAT      (0)
+
+// Enable or disable support for the async and await keywords for asynchronous programming.
 #define MICROPY_PY_ASYNC_AWAIT      (0)
+
+// Enable or disable attribute access on tuples.
 #define MICROPY_PY_ATTRTUPLE        (0)
-#define MICROPY_PY_BUILTINS_BYTES_HEX (1)
+
+// Virtual File System
+#define MICROPY_VFS                 (0)
+
+// Enable or disable specific built-in Python features or functions, like enumerate, filter, min, max, etc.
 #define MICROPY_PY_BUILTINS_ENUMERATE (0)
 #define MICROPY_PY_BUILTINS_FILTER  (0)
 #define MICROPY_PY_BUILTINS_MIN_MAX (0)
 #define MICROPY_PY_BUILTINS_PROPERTY (0)
-#define MICROPY_PY_BUILTINS_RANGE_ATTRS (0)
+#define MICROPY_PY_BUILTINS_RANGE_ATTRS (0) // wether to include start, stop, step attributes in range objects. Does not effect function arguments.
 #define MICROPY_PY_BUILTINS_REVERSED (0)
 #define MICROPY_PY_BUILTINS_SET     (0)
-#define MICROPY_PY_BUILTINS_STR_COUNT (0)
-#define MICROPY_PY_BUILTINS_MEMORYVIEW (1)
-#define MICROPY_PY_BUILTINS_HELP    (1)
-#define MICROPY_PY_BUILTINS_HELP_TEXT zephyr_help_text
+#define MICROPY_PY_BUILTINS_SLICE   (0)
+
+// Enable or disable specific Python modules.
 #define MICROPY_PY_ARRAY            (0)
 #define MICROPY_PY_COLLECTIONS      (0)
 #define MICROPY_PY_CMATH            (0)
 #define MICROPY_PY_IO               (0)
-#define MICROPY_PY_MICROPYTHON_MEM_INFO (1)
-#define MICROPY_PY_MACHINE          (1)
-#define MICROPY_PY_MACHINE_I2C      (1)
-#define MICROPY_PY_MACHINE_SPI      (1)
-#define MICROPY_PY_MACHINE_SPI_MSB (SPI_TRANSFER_MSB)
-#define MICROPY_PY_MACHINE_SPI_LSB (SPI_TRANSFER_LSB)
-#define MICROPY_PY_MACHINE_PIN_MAKE_NEW mp_pin_make_new
 #define MICROPY_PY_STRUCT           (0)
-#ifdef CONFIG_NETWORKING
-// If we have networking, we likely want errno comfort
-#define MICROPY_PY_ERRNO            (1)
-#define MICROPY_PY_SOCKET           (1)
-#endif
-#ifdef CONFIG_BT
-#define MICROPY_PY_BLUETOOTH        (1)
-#ifdef CONFIG_BT_CENTRAL
-#define MICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE (1)
-#endif
-#define MICROPY_PY_BLUETOOTH_ENABLE_GATT_CLIENT (0)
-#endif
-#define MICROPY_PY_BINASCII         (1)
-#define MICROPY_PY_HASHLIB          (1)
-#define MICROPY_PY_OS               (1)
-#define MICROPY_PY_TIME             (1)
-#define MICROPY_PY_TIME_TIME_TIME_NS (1)
-#define MICROPY_PY_TIME_INCLUDEFILE "ports/zephyr/modtime.c"
-#define MICROPY_PY_ZEPHYR           (1)
-#define MICROPY_PY_ZSENSOR          (1)
 #define MICROPY_PY_SYS_MODULES      (0)
+
+// Choose the implementation for long integers. The option MICROPY_LONGINT_IMPL_LONGLONG uses long long types from C.
 #define MICROPY_LONGINT_IMPL (MICROPY_LONGINT_IMPL_LONGLONG)
+
+// Choose the implementation for floating point numbers. The option MICROPY_FLOAT_IMPL_FLOAT uses float types from C.
 #define MICROPY_FLOAT_IMPL (MICROPY_FLOAT_IMPL_FLOAT)
+
+// Enable or disable support for complex numbers.
 #define MICROPY_PY_BUILTINS_COMPLEX (0)
-#define MICROPY_ENABLE_SCHEDULER    (1)
-#define MICROPY_VFS                 (1)
-#define MICROPY_READER_VFS          (MICROPY_VFS)
 
-// fatfs configuration used in ffconf.h
-#define MICROPY_FATFS_ENABLE_LFN       (1)
-#define MICROPY_FATFS_LFN_CODE_PAGE    437 /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
-#define MICROPY_FATFS_USE_LABEL        (1)
-#define MICROPY_FATFS_RPATH            (2)
-#define MICROPY_FATFS_NORTC            (1)
-
+// These are compiler optimizations. For example, constant folding pre-calculates the results of computations with constant values at compile time, rather than runtime.
+// However it comes at the cost of more space.
 // Saving extra crumbs to make sure binary fits in 128K
 #define MICROPY_COMP_CONST_FOLDING  (0)
 #define MICROPY_COMP_CONST (0)
 #define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (0)
-
-void mp_hal_signal_event(void);
-#define MICROPY_SCHED_HOOK_SCHEDULED mp_hal_signal_event()
-
-#define MICROPY_PY_SYS_PLATFORM "zephyr"
 
 #ifdef CONFIG_BOARD
 #define MICROPY_HW_BOARD_NAME "zephyr-" CONFIG_BOARD
@@ -132,10 +124,3 @@ typedef unsigned mp_uint_t; // must be pointer size
 typedef long mp_off_t;
 
 #define MP_STATE_PORT MP_STATE_VM
-
-// extra built in names to add to the global namespace
-#define MICROPY_PORT_BUILTINS \
-    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
-
-#define MICROPY_BEGIN_ATOMIC_SECTION irq_lock
-#define MICROPY_END_ATOMIC_SECTION irq_unlock

@@ -31,7 +31,6 @@ include(mpy.cmake)
 
 target_sources(app PRIVATE
     src/zephyr_start.c
-    src/zephyr_getchar.c
 )
 
 target_link_libraries(app PRIVATE ${MICROPY_TARGET})

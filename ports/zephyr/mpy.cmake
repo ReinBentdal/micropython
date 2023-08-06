@@ -8,41 +8,17 @@ include(${MICROPY_DIR}/extmod/extmod.cmake)
 
 set(MICROPY_SOURCE_PORT
     main.c
-    help.c
-    machine_i2c.c
-    machine_spi.c
-    machine_pin.c
-    machine_uart.c
-    modbluetooth_zephyr.c
-    modmachine.c
-    modsocket.c
-    modzephyr.c
-    modzsensor.c
     mphalport.c
-    uart_core.c
-    zephyr_storage.c
 )
 list(TRANSFORM MICROPY_SOURCE_PORT PREPEND ${MICROPY_PORT_DIR}/)
 
 set(MICROPY_SOURCE_SHARED
     libc/printf.c
-    readline/readline.c
-    runtime/interrupt_char.c
-    runtime/mpirq.c
-    runtime/pyexec.c
     runtime/stdout_helpers.c
-    timeutils/timeutils.c
 )
 list(TRANSFORM MICROPY_SOURCE_SHARED PREPEND ${MICROPY_DIR}/shared/)
 
-set(MICROPY_SOURCE_LIB
-    oofatfs/ff.c
-    oofatfs/ffunicode.c
-    littlefs/lfs1.c
-    littlefs/lfs1_util.c
-    littlefs/lfs2.c
-    littlefs/lfs2_util.c
-)
+set(MICROPY_SOURCE_LIB)
 list(TRANSFORM MICROPY_SOURCE_LIB PREPEND ${MICROPY_DIR}/lib/)
 
 set(MICROPY_SOURCE_QSTR
@@ -76,10 +52,6 @@ zephyr_library_compile_definitions(
     NDEBUG
     MP_CONFIGFILE=<${CONFIG_MICROPY_CONFIGFILE}>
     MICROPY_HEAP_SIZE=${CONFIG_MICROPY_HEAP_SIZE}
-    FFCONF_H=\"${MICROPY_OOFATFS_DIR}/ffconf.h\"
-    MICROPY_VFS_FAT=$<BOOL:${CONFIG_MICROPY_VFS_FAT}>
-    MICROPY_VFS_LFS1=$<BOOL:${CONFIG_MICROPY_VFS_LFS1}>
-    MICROPY_VFS_LFS2=$<BOOL:${CONFIG_MICROPY_VFS_LFS2}>
 )
 
 zephyr_library_sources(${MICROPY_SOURCE_QSTR})
