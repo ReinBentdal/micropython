@@ -33,8 +33,6 @@
 
 #include <zephyr/kernel.h>
 
-#include "py/mperrno.h"
-#include "py/builtin.h"
 #include "py/compile.h"
 #include "py/runtime.h"
 #include "py/gc.h"
@@ -60,7 +58,7 @@ int main(void) {
     mp_obj_list_init(mp_sys_path, 0);
     mp_obj_list_init(mp_sys_argv, 0);
 
-    const char* script = "def test(num):\n"
+    const char* script = "def testfn(num):\n"
                         "    print(f'Hello number {num}')\n";
 
     nlr_buf_t nlr;
@@ -99,14 +97,15 @@ int main(void) {
 
     LOG_DBG("Before calling fn\n");
 
-    mp_obj_t test_fn = mp_load_global(MP_QSTR_test);
+    // qstr test_fn_ref = qstr_from_str("testfn");
+    mp_obj_t test_fn = mp_load_global(MP_QSTR_testfn);
 
     if (test_fn == MP_OBJ_NULL) {
         // Function not found, handle error
-        LOG_DBG("'test' function not found");
+        LOG_DBG("'testfn' function not found");
     } else {
         // Call the function
-        mp_obj_t num = mp_obj_new_int(112);
+        mp_obj_t num = mp_obj_new_int(114);
         mp_obj_t result = mp_call_function_1(test_fn, num);
         // Here you can do something with the result, if the function returns anything.
         (void)result;
@@ -129,33 +128,3 @@ void gc_collect(void) {
     gc_collect_root(&dummy, ((mp_uint_t)MP_STATE_THREAD(stack_top) - (mp_uint_t)&dummy) / sizeof(mp_uint_t));
     gc_collect_end();
 }
-
-#if !MICROPY_READER_VFS
-mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
-    mp_raise_OSError(ENOENT);
-}
-#endif
-
-#if !MICROPY_VFS
-mp_import_stat_t mp_import_stat(const char *path) {
-    return MP_IMPORT_STAT_NO_EXIST;
-}
-
-mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
-    return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
-#endif
-
-NORETURN void nlr_jump_fail(void *val) {
-    while (1) {
-        ;
-    }
-}
-
-#ifndef NDEBUG
-void MP_WEAK __assert_func(const char *file, int line, const char *func, const char *expr) {
-    printf("Assertion '%s' failed, at file %s:%d\n", expr, file, line);
-    __fatal_error("Assertion failed");
-}
-#endif
