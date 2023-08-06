@@ -32,10 +32,6 @@ zephyr_library_include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-zephyr_library_compile_options(
-    -std=gnu99 -fomit-frame-pointer
-)
-
 zephyr_library_compile_definitions(
     NDEBUG
     MP_CONFIGFILE=<${CONFIG_MICROPY_CONFIGFILE}>
