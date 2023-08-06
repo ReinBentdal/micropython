@@ -6,13 +6,15 @@ set(MICROPY_TARGET      micropython)
 include(${MICROPY_DIR}/py/py.cmake)
 include(${MICROPY_DIR}/extmod/extmod.cmake)
 
+list(TRANSFORM MP_QSTR_EXT_SOURCES PREPEND ${CMAKE_SOURCE_DIR}/)
+
 set(MICROPY_SOURCE_QSTR
     ${MICROPY_SOURCE_PY}
     ${MICROPY_SOURCE_EXTMOD}
     ${MICROPY_PORT_DIR}/mphalport.c
-    ${MICROPY_PORT_DIR}/src/main.c
     ${MICROPY_DIR}/shared/libc/printf.c
     ${MICROPY_DIR}/shared/runtime/stdout_helpers.c
+    ${MP_QSTR_EXT_SOURCES}
 )
 
 zephyr_get_include_directories_for_lang(C includes)
