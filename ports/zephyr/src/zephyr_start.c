@@ -30,19 +30,18 @@
 #include "py/mperrno.h"
 #include "py/obj.h"
 
-// #include "../main.c"
-
-// int real_main(void);
+int real_main(void);
 
 int main(void) {
 
     mp_obj_t test;
+    (void)test;
     // #ifdef CONFIG_CONSOLE_SUBSYS
     // console_init();
     // #else
     // zephyr_getchar_init();
     // #endif
-    // real_main();
+    real_main();
 
     // // This is needed so the linker includes k_timer_init, z_impl_k_timer_start
     // // and z_impl_k_timer_stop, as used by libmicropython.a.

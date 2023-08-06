@@ -25,156 +25,98 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <zephyr/kernel.h>
-#ifdef CONFIG_NETWORKING
-#include <zephyr/net/net_context.h>
-#endif
-
-#ifdef CONFIG_USB_DEVICE_STACK
-#include <zephyr/usb/usb_device.h>
-#endif
-
-#include <zephyr/storage/flash_map.h>
 
 #include "py/mperrno.h"
 #include "py/builtin.h"
 #include "py/compile.h"
 #include "py/runtime.h"
-#include "py/repl.h"
 #include "py/gc.h"
 #include "py/mphal.h"
 #include "py/stackctrl.h"
-#include "shared/runtime/pyexec.h"
-#include "shared/readline/readline.h"
-#include "extmod/modbluetooth.h"
+#include "py/obj.h"
+#include "py/objfun.h"
 
-#if MICROPY_VFS
-#include "extmod/vfs.h"
-#endif
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(main, 4);
 
-#include "modmachine.h"
-#include "modzephyr.h"
-
-#ifdef TEST
-#include "shared/upytesthelper/upytesthelper.h"
-#include "lib/tinytest/tinytest.c"
-#include "shared/upytesthelper/upytesthelper.c"
-#include TEST
-#endif
-
-static char heap[MICROPY_HEAP_SIZE];
-
-void init_zephyr(void) {
-    // We now rely on CONFIG_NET_APP_SETTINGS to set up bootstrap
-    // network addresses.
-    #if 0
-    #ifdef CONFIG_NETWORKING
-    if (net_if_get_default() == NULL) {
-        // If there's no default networking interface,
-        // there's nothing to configure.
-        return;
-    }
-    #endif
-    #ifdef CONFIG_NET_IPV4
-    static struct in_addr in4addr_my = {{{192, 0, 2, 1}}};
-    net_if_ipv4_addr_add(net_if_get_default(), &in4addr_my, NET_ADDR_MANUAL, 0);
-    static struct in_addr in4netmask_my = {{{255, 255, 255, 0}}};
-    net_if_ipv4_set_netmask(net_if_get_default(), &in4netmask_my);
-    static struct in_addr in4gw_my = {{{192, 0, 2, 2}}};
-    net_if_ipv4_set_gw(net_if_get_default(), &in4gw_my);
-    #endif
-    #ifdef CONFIG_NET_IPV6
-    // 2001:db8::1
-    static struct in6_addr in6addr_my = {{{0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}};
-    net_if_ipv6_addr_add(net_if_get_default(), &in6addr_my, NET_ADDR_MANUAL, 0);
-    #endif
-    #endif
-}
-
-#if MICROPY_VFS
-STATIC void vfs_init(void) {
-    mp_obj_t bdev = NULL;
-    mp_obj_t mount_point;
-    const char *mount_point_str = NULL;
-    int ret = 0;
-
-    #ifdef CONFIG_DISK_DRIVER_SDMMC
-    mp_obj_t args[] = { mp_obj_new_str(CONFIG_SDMMC_VOLUME_NAME, strlen(CONFIG_SDMMC_VOLUME_NAME)) };
-    bdev = MP_OBJ_TYPE_GET_SLOT(&zephyr_disk_access_type, make_new)(&zephyr_disk_access_type, ARRAY_SIZE(args), 0, args);
-    mount_point_str = "/sd";
-    #elif defined(CONFIG_FLASH_MAP) && FLASH_AREA_LABEL_EXISTS(storage)
-    mp_obj_t args[] = { MP_OBJ_NEW_SMALL_INT(FLASH_AREA_ID(storage)), MP_OBJ_NEW_SMALL_INT(4096) };
-    bdev = MP_OBJ_TYPE_GET_SLOT(&zephyr_flash_area_type, make_new)(&zephyr_flash_area_type, ARRAY_SIZE(args), 0, args);
-    mount_point_str = "/flash";
-    #endif
-
-    if ((bdev != NULL)) {
-        mount_point = mp_obj_new_str(mount_point_str, strlen(mount_point_str));
-        ret = mp_vfs_mount_and_chdir_protected(bdev, mount_point);
-        // TODO: if this failed, make a new file system and try to mount again
-    }
-}
-#endif // MICROPY_VFS
+static char heap[CONFIG_MICROPY_HEAP_SIZE];
 
 int real_main(void) {
+    LOG_DBG("booting...");
+
     mp_stack_ctrl_init();
-    // Make MicroPython's stack limit somewhat smaller than full stack available
     mp_stack_set_limit(CONFIG_MAIN_STACK_SIZE - 512);
 
-    init_zephyr();
-    mp_hal_init();
-
-    #ifdef TEST
-    static const char *argv[] = {"test"};
-    upytest_set_heap(heap, heap + sizeof(heap));
-    int r = tinytest_main(1, argv, groups);
-    printf("status: %d\n", r);
-    #endif
-
-soft_reset:
-    #if MICROPY_ENABLE_GC
     gc_init(heap, heap + sizeof(heap));
-    #endif
+
     mp_init();
+    mp_obj_list_init(mp_sys_path, 0);
+    mp_obj_list_init(mp_sys_argv, 0);
 
-    #ifdef CONFIG_USB_DEVICE_STACK
-    usb_enable(NULL);
-    #endif
+    const char* script = "def test(num):\n"
+                        "    print(f'Hello number {num}')\n";
 
-    #if MICROPY_VFS
-    vfs_init();
-    #endif
+    nlr_buf_t nlr;
+    if (nlr_push(&nlr) == 0) {
+        LOG_DBG("Before lexer\n");
+        mp_lexer_t *lex = mp_lexer_new_from_str_len(0, script, strlen(script), false);
+        LOG_DBG("After lexer\n");
 
-    #if MICROPY_MODULE_FROZEN || MICROPY_VFS
-    pyexec_file_if_exists("main.py");
-    #endif
+        LOG_DBG("Before parsing\n");
+        mp_parse_tree_t parse_tree = mp_parse(lex, MP_PARSE_FILE_INPUT);
+        LOG_DBG("After parsing\n");
 
-    for (;;) {
-        if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
-            if (pyexec_raw_repl() != 0) {
-                break;
-            }
-        } else {
-            if (pyexec_friendly_repl() != 0) {
-                break;
-            }
+        LOG_DBG("Before compilation\n");
+        mp_obj_t obj_fun = mp_compile(&parse_tree, lex->source_name, false);
+
+        mp_obj_fun_bc_t* fun_bc = MP_OBJ_TO_PTR(obj_fun);
+        
+        mp_code_state_t code_state;
+        code_state.fun_bc = fun_bc;
+        code_state.n_state = 0; // No local state initially.
+        mp_setup_code_state(&code_state, 0, 0, NULL);
+        LOG_DBG("After compilation\n");
+        
+        LOG_DBG("Before bytecode execution\n");
+        mp_vm_return_kind_t ret = mp_execute_bytecode(&code_state, NULL);
+        if (ret != MP_VM_RETURN_NORMAL) {
+            LOG_DBG("Error executing bytecode, %d", (int)ret);
         }
+        LOG_DBG("After bytecode execution\n");
+        
+        nlr_pop();
+    } else {
+        LOG_WRN("exception");
+        mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
     }
 
-    printf("soft reboot\n");
+    LOG_DBG("Before calling fn\n");
 
-    #if MICROPY_PY_BLUETOOTH
-    mp_bluetooth_deinit();
-    #endif
-    #if MICROPY_PY_MACHINE
-    machine_pin_deinit();
-    #endif
+    mp_obj_t test_fn = mp_load_global(MP_QSTR_test);
 
-    goto soft_reset;
+    if (test_fn == MP_OBJ_NULL) {
+        // Function not found, handle error
+        LOG_DBG("'test' function not found");
+    } else {
+        // Call the function
+        mp_obj_t num = mp_obj_new_int(72);
+        mp_obj_t result = mp_call_function_1(test_fn, num);
+        // Here you can do something with the result, if the function returns anything.
+        (void)result;
+    }
+
+    mp_deinit();
+
+    LOG_DBG("End of main\n");
+
+    k_sleep(K_FOREVER);
 
     return 0;
 }
