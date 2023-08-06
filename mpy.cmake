@@ -14,6 +14,8 @@ set(MICROPY_SOURCE_QSTR
     ${MICROPY_PORT_DIR}/mphalport.c
     ${MICROPY_DIR}/shared/libc/printf.c
     ${MICROPY_DIR}/shared/runtime/stdout_helpers.c
+    ${MICROPY_DIR}/shared/runtime/gchelper_thumb2.s
+    ${MICROPY_DIR}/shared/runtime/gchelper_native.c
     ${MP_QSTR_EXT_SOURCES}
 )
 
