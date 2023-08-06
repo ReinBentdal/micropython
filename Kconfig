@@ -34,4 +34,3 @@ config MICROPY_HEAP_SIZE
 
 endmenu # MicroPython Options
 
-source "Kconfig.zephyr"
